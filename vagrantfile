@@ -1,0 +1,23 @@
+Vagrant.configure("2") do |config|
+    config.vm.box = "ubuntu/focal64" # or another desired OS image
+    config.vm.provider "virtualbox" do |vb|
+      vb.memory = "2048" # Customize memory size if needed
+      vb.cpus = 2 # Customize CPU count if needed
+    end
+    config.vm.provision "shell", inline: <<-SHELL
+      # Add Kubernetes repository and install necessary packages
+      sudo apt-get update
+      sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+      curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
+      sudo add-apt-repository "deb https://apt.kubernetes.io/ kubernetes-xenial main"
+      sudo apt-get update
+      sudo apt-get install -y kubectl kubelet kubeadm
+      # Initialize Kubernetes cluster (use your desired IP address range)
+      sudo kubeadm init --pod-network-cidr=192.168.0.0/16
+      mkdir -p $HOME/.kube
+      sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+      sudo chown $(id -u):$(id -g) $HOME/.kube/config
+      # Install a network plugin (e.g., Calico)
+      kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+    SHELL
+  end
